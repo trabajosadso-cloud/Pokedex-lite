@@ -1,17 +1,52 @@
-import { Text, View, StyleSheet } from "react-native";
+// app/index.tsx
+import { FlatList, Text, View, StyleSheet, ActivityIndicator, Pressable, useWindowDimensions } from "react-native";
+import { Link } from "expo-router";
+import { usePokemonList } from "../hooks/usePokemonList";
 
-export default function Index() {
+const HomeScreen = () => {
+  const { pokemons, loading, error } = usePokemonList(20);
+  const { width } = useWindowDimensions();
+  const columnas = width > 600 ? 3 : width > 380 ? 2 : 1;
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text>Ocurrió un error: {error}</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
-    </View>
+    <FlatList
+      key={columnas}
+      data={pokemons}
+      numColumns={columnas}
+      keyExtractor={(item) => item.name}
+      contentContainerStyle={styles.list}
+      renderItem={({ item }) => (
+        <Link href={`/pokemon/${item.name}` as any} asChild>
+          <Pressable style={styles.row}>
+            <Text style={styles.name}>{item.name}</Text>
+          </Pressable>
+        </Link>
+      )}
+    />
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  list: { padding: 16 },
+  row: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderColor: "#eee" },
+  name: { fontSize: 18, textTransform: "capitalize" },
 });
+
+export default HomeScreen;
