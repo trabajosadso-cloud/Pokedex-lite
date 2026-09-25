@@ -1,0 +1,484 @@
+
+// --- Archivo: src/types/pokemon.ts ---
+export interface PokemonListItem {
+  name: string;
+  url: string;
+}
+
+export interface PokemonListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: PokemonListItem[];
+}
+
+export interface PokemonType {
+  slot: number;
+  type: { name: string; url: string };
+}
+
+export interface PokemonStat {
+  base_stat: number;
+  stat: { name: string };
+}
+
+export interface PokemonDetail {
+  id: number;
+  name: string;
+  height: number;
+  weight: number;
+  sprites: {
+    front_default: string | null;
+  };
+  types: PokemonType[];
+  stats: PokemonStat[];
+}
+// --- Archivo: src/app/favoritos.tsx ---
+// app/favoritos.tsx
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { PokemonCard } from "../components/PokemonCard";
+import { useFavorites } from "../context/FavoritesContext";
+
+const FavoritosScreen = () => {
+  const { favoritos, cargando } = useFavorites();
+  const { width } = useWindowDimensions();
+  const columnas = width > 600 ? 4 : width > 380 ? 2 : 1;
+
+  if (cargando) {
+    return (
+      <View style={styles.center}>
+        <Text>Cargando favoritos...</Text>
+      </View>
+    );
+  }
+
+  if (favoritos.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.emptyText}>Todavía no marcaste favoritos.</Text>
+        <Text style={styles.emptySub}>
+          Tocá la estrella en cualquier Pokémon para agregarlo acá.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      key={columnas}
+      data={favoritos}
+      numColumns={columnas}
+      keyExtractor={(item) => item.name}
+      contentContainerStyle={styles.list}
+      renderItem={({ item }) => <PokemonCard name={item.name} id={item.id} />}
+    />
+  );
+};
+
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  emptyText: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
+  emptySub: { fontSize: 14, color: "#888", textAlign: "center" },
+  list: { padding: 8 },
+});
+
+export default FavoritosScreen;
+
+// --- Archivo: src/app/index.tsx ---
+// app/index.tsx
+import { FlatList, View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from "react-native";
+import { usePokemonList } from "../hooks/usePokemonList";
+import { PokemonCard } from "../components/PokemonCard";
+import { obtenerIdDesdeUrl } from "../utils/pokemon";
+
+const HomeScreen = () => {
+  const { pokemons, loading, error } = usePokemonList(60);
+  const { width } = useWindowDimensions();
+  const columnas = width > 600 ? 4 : width > 380 ? 2 : 1;
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text>Ocurrió un error: {error}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      key={columnas}
+      data={pokemons}
+      numColumns={columnas}
+      keyExtractor={(item) => item.name}
+      contentContainerStyle={styles.list}
+      renderItem={({ item }) => (
+        <PokemonCard name={item.name} id={obtenerIdDesdeUrl(item.url)} />
+      )}
+    />
+  );
+};
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  list: { padding: 8 },
+});
+
+export default HomeScreen;
+// --- Archivo: src/app/_layout.tsx ---
+// app/_layout.tsx
+import { Link, Stack } from "expo-router";
+import { Pressable, Text } from "react-native";
+import { FavoritesProvider } from "../context/FavoritesContext";
+
+const BotonFavoritos = () => (
+  <Link href="/favoritos" asChild>
+    <Pressable hitSlop={10} style={{ marginRight: 12 }}>
+      <Text style={{ fontSize: 20 }}>★</Text>
+    </Pressable>
+  </Link>
+);
+
+const RootLayout = () => {
+  return (
+    <FavoritesProvider>
+      <Stack>
+        <Stack.Screen
+          name="index"
+          options={{
+            title: "Pokedex Lite",
+            headerRight: () => <BotonFavoritos />,
+          }}
+        />
+        <Stack.Screen name="pokemon/[name]" options={{ title: "Detalle" }} />
+        <Stack.Screen name="favoritos" options={{ title: "Favoritos" }} />
+      </Stack>
+    </FavoritesProvider>
+  );
+};
+
+export default RootLayout;
+
+// --- Archivo: src/app/pokemon/[name].tsx ---
+// app/pokemon/[name].tsx
+import { useLocalSearchParams } from "expo-router";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { usePokemonDetail } from "../../hooks/usePokemonDetail";
+
+const PokemonDetailScreen = () => {
+  const { name } = useLocalSearchParams<{ name: string }>();
+  const { pokemon, loading, error } = usePokemonDetail(name);
+  const { width } = useWindowDimensions();
+  const tamañoImagen = width > 600 ? 220 : 150;
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error || !pokemon) {
+    return (
+      <View style={styles.center}>
+        <Text>No se pudo cargar el Pokémon.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {pokemon.sprites.front_default && (
+        <Image
+          source={{ uri: pokemon.sprites.front_default }}
+          style={{ width: tamañoImagen, height: tamañoImagen }}
+        />
+      )}
+      <Text style={styles.title}>{pokemon.name}</Text>
+      <Pressable
+        onPress={() => toggleFavorito({ name: pokemon.name, id: pokemon.id })}
+      >
+        <Text style={{ fontSize: 16, color: "#f5a623", marginBottom: 8 }}>
+          {esFavorito(pokemon.name) ? "★ Favorito" : "☆ Agregar a favoritos"}
+        </Text>
+      </Pressable>
+      <Text>Tipos: {pokemon.types.map((t) => t.type.name).join(", ")}</Text>
+      <Text>Altura: {pokemon.height}</Text>
+      <Text>Peso: {pokemon.weight}</Text>
+      <View style={styles.stats}>
+        {pokemon.stats.map((s) => (
+          <Text key={s.stat.name}>
+            {s.stat.name}: {s.base_stat}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { flex: 1, alignItems: "center", padding: 24 },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textTransform: "capitalize",
+    marginVertical: 8,
+  },
+  stats: { marginTop: 16, alignItems: "flex-start" },
+});
+
+export default PokemonDetailScreen;
+
+// --- Archivo: src/context/FavoritesContext.tsx ---
+// context/FavoritesContext.tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
+export interface FavoritoPokemon {
+  name: string;
+  id: number;
+}
+
+interface FavoritesContextType {
+  favoritos: FavoritoPokemon[];
+  esFavorito: (name: string) => boolean;
+  toggleFavorito: (pokemon: FavoritoPokemon) => void;
+  cargando: boolean;
+}
+
+const FavoritesContext = createContext<FavoritesContextType | undefined>(
+  undefined,
+);
+const STORAGE_KEY = "@pokedex_favoritos";
+
+export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
+  const [favoritos, setFavoritos] = useState<FavoritoPokemon[]>([]);
+  const [cargando, setCargando] = useState<boolean>(true);
+
+  useEffect(() => {
+    const cargarFavoritos = async () => {
+      try {
+        const guardado = await AsyncStorage.getItem(STORAGE_KEY);
+        if (guardado) setFavoritos(JSON.parse(guardado));
+      } catch (err) {
+        console.log("Error cargando favoritos:", err);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarFavoritos();
+  }, []);
+
+  const guardarFavoritos = async (nuevos: FavoritoPokemon[]) => {
+    setFavoritos(nuevos);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nuevos));
+    } catch (err) {
+      console.log("Error guardando favoritos:", err);
+    }
+  };
+
+  const esFavorito = (name: string) => favoritos.some((f) => f.name === name);
+
+  const toggleFavorito = (pokemon: FavoritoPokemon) => {
+    const nuevos = esFavorito(pokemon.name)
+      ? favoritos.filter((f) => f.name !== pokemon.name)
+      : [...favoritos, pokemon];
+    guardarFavoritos(nuevos);
+  };
+
+  return (
+    <FavoritesContext.Provider
+      value={{ favoritos, esFavorito, toggleFavorito, cargando }}
+    >
+      {children}
+    </FavoritesContext.Provider>
+  );
+};
+
+export const useFavorites = () => {
+  const context = useContext(FavoritesContext);
+  if (!context)
+    throw new Error("useFavorites debe usarse dentro de FavoritesProvider");
+  return context;
+};
+
+// --- Archivo: src/utils/pokemon.ts ---
+// utils/pokemon.ts
+export const obtenerIdDesdeUrl = (url: string): number => {
+  const partes = url.split("/").filter(Boolean); // quita strings vacíos
+  return Number(partes[partes.length - 1]);
+};
+
+export const obtenerImagenUrl = (id: number): string => {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/official-artwork/${id}.png`;
+};
+
+// --- Archivo: src/components/PokemonCard.tsx ---
+// components/PokemonCard.tsx
+import { Text, Image, Pressable, StyleSheet } from "react-native";
+import { Link } from "expo-router";
+import { useFavorites } from "../context/FavoritesContext";
+import { obtenerImagenUrl } from "../utils/pokemon";
+
+interface PokemonCardProps {
+  name: string;
+  id: number;
+}
+
+export const PokemonCard = ({ name, id }: PokemonCardProps) => {
+  const { esFavorito, toggleFavorito } = useFavorites();
+  const favorito = esFavorito(name);
+
+  return (
+    <Link href={`/pokemon/${name}`} asChild>
+      <Pressable style={styles.card}>
+        <Pressable
+          style={styles.heart}
+          hitSlop={10}
+          onPress={(e) => {
+            e.stopPropagation();
+            toggleFavorito({ name, id });
+          }}
+        >
+          <Text style={styles.heartText}>{favorito ? "★" : "☆"}</Text>
+        </Pressable>
+        <Text style={styles.id}>#{id.toString().padStart(3, "0")}</Text>
+        <Image
+          source={{ uri: obtenerImagenUrl(id) }}
+          style={styles.image}
+          resizeMode="contain"
+        />
+        <Text style={styles.name}>{name}</Text>
+      </Pressable>
+    </Link>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    flex: 1,
+    margin: 8,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 140,
+  },
+  heart: { position: "absolute", top: 8, right: 8, zIndex: 1 },
+  heartText: { fontSize: 20, color: "#f5a623" },
+  id: { alignSelf: "flex-start", color: "#999", fontSize: 12, fontWeight: "600" },
+  image: { width: 96, height: 96, marginVertical: 4 },
+  name: { fontSize: 16, fontWeight: "600", textTransform: "capitalize" },
+});
+// --- Archivo: src/hooks/usePokemonDetail.ts ---
+// hooks/usePokemonDetail.ts
+import { useEffect, useState } from "react";
+import { PokemonDetail } from "../types/pokemon";
+
+export const usePokemonDetail = (name: string) => {
+  const [pokemon, setPokemon] = useState<PokemonDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchDetail = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const data: PokemonDetail = await res.json();
+        if (!cancelled) setPokemon(data);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Error desconocido");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchDetail();
+    return () => {
+      cancelled = true;
+    };
+  }, [name]);
+
+  return { pokemon, loading, error };
+};
+// --- Archivo: src/hooks/usePokemonList.ts ---
+// hooks/usePokemonList.ts
+import { useEffect, useState } from "react";
+import { PokemonListItem, PokemonListResponse } from "../types/pokemon";
+
+export const usePokemonList = (limit: number = 20) => {
+  const [pokemons, setPokemons] = useState<PokemonListItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPokemons = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=0`
+        );
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const data: PokemonListResponse = await res.json();
+        if (!cancelled) setPokemons(data.results);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Error desconocido");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchPokemons();
+    return () => {
+      cancelled = true;
+    };
+  }, [limit]);
+
+  return { pokemons, loading, error };
+};

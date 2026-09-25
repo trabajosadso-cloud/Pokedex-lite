@@ -1,20 +1,13 @@
 // app/index.tsx
-import { Link } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlatList, View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from "react-native";
 import { usePokemonList } from "../hooks/usePokemonList";
+import { PokemonCard } from "../components/PokemonCard";
+import { obtenerIdDesdeUrl } from "../utils/pokemon";
 
 const HomeScreen = () => {
-  const { pokemons, loading, error } = usePokemonList(20);
+  const { pokemons, loading, error } = usePokemonList(60);
   const { width } = useWindowDimensions();
-  const columnas = width > 600 ? 3 : width > 380 ? 2 : 1;
+  const columnas = width > 600 ? 4 : width > 380 ? 2 : 1;
 
   if (loading) {
     return (
@@ -40,11 +33,7 @@ const HomeScreen = () => {
       keyExtractor={(item) => item.name}
       contentContainerStyle={styles.list}
       renderItem={({ item }) => (
-        <Link href={`/pokemon/${item.name}` as any} asChild>
-          <Pressable style={styles.row}>
-            <Text style={styles.name}>{item.name}</Text>
-          </Pressable>
-        </Link>
+        <PokemonCard name={item.name} id={obtenerIdDesdeUrl(item.url)} />
       )}
     />
   );
@@ -52,15 +41,7 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  list: { padding: 16 },
-  row: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-  },
-  name: { fontSize: 18, textTransform: "capitalize" },
+  list: { padding: 8 },
 });
 
 export default HomeScreen;
