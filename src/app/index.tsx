@@ -1,13 +1,20 @@
 // app/index.tsx
-import { FlatList, View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from "react-native";
-import { usePokemonList } from "../hooks/usePokemonList";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { PokemonCard } from "../components/PokemonCard";
+import { usePokemonList } from "../hooks/usePokemonList";
 import { obtenerIdDesdeUrl } from "../utils/pokemon";
 
 const HomeScreen = () => {
   const { pokemons, loading, error } = usePokemonList(60);
   const { width } = useWindowDimensions();
-  const columnas = width > 600 ? 4 : width > 380 ? 2 : 1;
+  const columnas = Math.max(1, Math.floor(width / 240));
 
   if (loading) {
     return (
@@ -31,7 +38,7 @@ const HomeScreen = () => {
       data={pokemons}
       numColumns={columnas}
       keyExtractor={(item) => item.name}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={{ padding: 16, alignItems: "center" }}
       renderItem={({ item }) => (
         <PokemonCard name={item.name} id={obtenerIdDesdeUrl(item.url)} />
       )}

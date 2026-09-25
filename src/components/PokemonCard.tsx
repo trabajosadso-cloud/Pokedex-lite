@@ -1,6 +1,11 @@
-// components/PokemonCard.tsx
-import { useRouter } from "expo-router"; // <-- Importamos useRouter
-import { Image, Pressable, StyleSheet, Text } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { useFavorites } from "../context/FavoritesContext";
 import { obtenerImagenUrl } from "../utils/pokemon";
 
@@ -12,27 +17,25 @@ interface PokemonCardProps {
 export const PokemonCard = ({ name, id }: PokemonCardProps) => {
   const { esFavorito, toggleFavorito } = useFavorites();
   const favorito = esFavorito(name);
-  const router = useRouter(); // <-- Inicializamos el router
+  const router = useRouter();
 
   return (
-    <Pressable
-      onPress={() => router.push(`/pokemon/${name}`)} // <-- Navega solo si tocas la tarjeta
-      style={({ pressed }) => [
-        styles.card,
-        pressed && styles.cardPressed, // <-- Aplica animación al hacer clic
-      ]}
+    <TouchableOpacity
+      activeOpacity={0.6} // Efecto de botón real al tocar
+      onPress={() => router.push(`/pokemon/${name}`)}
+      style={styles.card}
     >
       <Pressable
         style={styles.heart}
-        hitSlop={10}
+        hitSlop={15}
         onPress={(e) => {
-          e.stopPropagation(); // <-- IMPORTANTE: Evita que el clic llegue a la tarjeta y navegue
+          e.stopPropagation();
           e.preventDefault();
           toggleFavorito({ name, id });
         }}
         {...({
           title: favorito ? "Quitar de favoritos" : "Marcar como favorito",
-        } as any)} // <-- Tooltip
+        } as any)}
       >
         <Text style={styles.heartText}>{favorito ? "★" : "☆"}</Text>
       </Pressable>
@@ -44,7 +47,7 @@ export const PokemonCard = ({ name, id }: PokemonCardProps) => {
         resizeMode="contain"
       />
       <Text style={styles.name}>{name}</Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 };
 
@@ -61,11 +64,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    minWidth: 140,
-  },
-  cardPressed: {
-    transform: [{ scale: 0.95 }], // <-- Animación: Se encoge un 5% al presionarla
-    opacity: 0.8,
+    minWidth: 160,
+    maxWidth: 260, // Límite de ancho para que no se estiren como cajas largas
   },
   heart: { position: "absolute", top: 8, right: 8, zIndex: 1 },
   heartText: { fontSize: 20, color: "#f5a623" },

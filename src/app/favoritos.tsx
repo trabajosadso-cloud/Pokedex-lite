@@ -12,7 +12,7 @@ import { useFavorites } from "../context/FavoritesContext";
 const FavoritosScreen = () => {
   const { favoritos, cargando } = useFavorites();
   const { width } = useWindowDimensions();
-  const columnas = width > 600 ? 4 : width > 380 ? 2 : 1;
+  const columnas = Math.max(1, Math.floor(width / 240));
 
   if (cargando) {
     return (
@@ -39,7 +39,7 @@ const FavoritosScreen = () => {
       data={favoritos}
       numColumns={columnas}
       keyExtractor={(item) => item.name}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={{ padding: 16, alignItems: "center" }}
       renderItem={({ item }) => <PokemonCard name={item.name} id={item.id} />}
     />
   );

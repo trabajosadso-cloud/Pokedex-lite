@@ -5,12 +5,12 @@ import { FavoritesProvider } from "../context/FavoritesContext";
 
 const BotonFavoritos = () => (
   <Link href={"/favoritos" as Href} asChild>
-    <Pressable
-      hitSlop={10}
-      style={{ marginRight: 12 }}
-      {...({ title: "Ver favorito" } as any)} // <-- Aquí agregamos el tooltip
+    <Pressable 
+      hitSlop={10} 
+      style={{ marginRight: 16 }}
+      {...({ title: "Favoritos" } as any)} 
     >
-      <Text style={{ fontSize: 20 }}>★</Text>
+      <Text style={{ fontSize: 32, color: "#000" }}>★</Text>
     </Pressable>
   </Link>
 );
