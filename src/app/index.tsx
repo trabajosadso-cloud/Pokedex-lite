@@ -1,6 +1,14 @@
 // app/index.tsx
-import { FlatList, Text, View, StyleSheet, ActivityIndicator, Pressable, useWindowDimensions } from "react-native";
 import { Link } from "expo-router";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { usePokemonList } from "../hooks/usePokemonList";
 
 const HomeScreen = () => {
@@ -45,7 +53,13 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { padding: 16 },
-  row: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderColor: "#eee" },
+  row: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+  },
   name: { fontSize: 18, textTransform: "capitalize" },
 });
 
