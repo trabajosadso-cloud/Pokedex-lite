@@ -5,5 +5,6 @@ export const obtenerIdDesdeUrl = (url: string): number => {
 };
 
 export const obtenerImagenUrl = (id: number): string => {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/official-artwork/${id}.png`;
+  // Solución: Se agregó "/other/" antes de "official-artwork"
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 };
